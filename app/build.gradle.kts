@@ -80,4 +80,8 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.json)
 
+    //data store
+    implementation(libs.androidx.datastore.preferences)
+
+
 }

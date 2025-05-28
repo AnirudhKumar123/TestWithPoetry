@@ -1,4 +1,4 @@
-package com.example.testwithpoetry.ui.theme
+package com.example.testwithpoetry.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 

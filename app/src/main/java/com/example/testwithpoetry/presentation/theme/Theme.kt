@@ -1,4 +1,4 @@
-package com.example.testwithpoetry.ui.theme
+package com.example.testwithpoetry.presentation.theme
 
 import android.app.Activity
 import android.os.Build

@@ -1,4 +1,4 @@
-package com.example.testwithpoetry.localModels
+package com.example.testwithpoetry.domain.model
 
 data class User (
     val name: String,
