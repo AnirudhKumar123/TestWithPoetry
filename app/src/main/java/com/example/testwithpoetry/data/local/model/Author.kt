@@ -1,4 +1,4 @@
-package com.example.testwithpoetry.domain.model
+package com.example.testwithpoetry.data.local.model
 
 data class Author(
     val name: String,

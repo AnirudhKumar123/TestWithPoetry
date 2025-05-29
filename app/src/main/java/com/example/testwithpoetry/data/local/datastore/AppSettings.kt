@@ -7,7 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.example.testwithpoetry.domain.model.User
+import com.example.testwithpoetry.data.local.model.User
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -31,6 +31,7 @@ class AppSettings @Inject constructor(
         context.dataStore.edit { settings ->
             settings[PreferencesKeys.USER_NAME] = user.name
             settings[PreferencesKeys.USER_EMAIL] = user.email
+            settings[PreferencesKeys.USER_BIRTHDAY] = user.birthday
         }
     }
 
@@ -42,7 +43,7 @@ class AppSettings @Inject constructor(
         User(
             name = prefs[PreferencesKeys.USER_NAME] ?: "",
             email = prefs[PreferencesKeys.USER_EMAIL] ?: "",
-            1232L
+            birthday = prefs[PreferencesKeys.USER_BIRTHDAY]?:""
         )
     }
 
@@ -50,5 +51,7 @@ class AppSettings @Inject constructor(
         val FIRST_LAUNCH = booleanPreferencesKey("first_launch")
         val USER_NAME = stringPreferencesKey("user_name")
         val USER_EMAIL = stringPreferencesKey("user_email")
+        val USER_BIRTHDAY = stringPreferencesKey("user_birthday")
+
     }
 }

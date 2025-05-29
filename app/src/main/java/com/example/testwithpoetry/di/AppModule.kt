@@ -40,7 +40,7 @@ class AppModule {
 
     @Provides
     @Singleton
-    fun providesHttClient(): HttpClient {
+    fun providesHttpClient(): HttpClient {
         return HttpClient(Android) {
             install(Logging) {
                 level = LogLevel.ALL

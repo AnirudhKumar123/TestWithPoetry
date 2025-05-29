@@ -1,4 +1,4 @@
-package com.example.testwithpoetry
+package com.example.testwithpoetry.di
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp

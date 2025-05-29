@@ -1,14 +1,15 @@
 package com.example.testwithpoetry.data.repository
 
-import com.example.testwithpoetry.NetworkResource
+import android.util.Log
+import com.example.testwithpoetry.presentation.state.NetworkResource
 import com.example.testwithpoetry.data.local.database.FavouriteAuthor
 import com.example.testwithpoetry.data.local.database.FavouriteDao
-import com.example.testwithpoetry.domain.model.Author
-import com.example.testwithpoetry.domain.model.Poem
+import com.example.testwithpoetry.data.local.model.Author
+import com.example.testwithpoetry.data.local.model.Poem
 import com.example.testwithpoetry.domain.repository.PoetryRepository
-import com.example.testwithpoetry.remoteResponses.AuthorsResponse
-import com.example.testwithpoetry.remoteResponses.PoemResponse
-import com.example.testwithpoetry.remoteResponses.PoemTitleReponse
+import com.example.testwithpoetry.data.remote.model.AuthorsResponse
+import com.example.testwithpoetry.data.remote.model.PoemResponse
+import com.example.testwithpoetry.data.remote.model.PoemTitleResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.ClientRequestException
@@ -16,7 +17,6 @@ import io.ktor.client.plugins.RedirectResponseException
 import io.ktor.client.plugins.ServerResponseException
 import io.ktor.client.request.get
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import okio.IOException
@@ -45,13 +45,16 @@ class PoetryRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getTitlesByAuthor(authorName: String): NetworkResource<String> {
+    override suspend fun getTitlesByAuthor(authorName: String): NetworkResource<List<String>> {
         return try {
             withContext(Dispatchers.IO) {
-                val response: PoemTitleReponse = client.get("author/$authorName/title").body()
-                NetworkResource.Success(response.title)
+                val response: List<PoemTitleResponse> =
+                    client.get("author/$authorName/title").body()
+                val titles = response.map { it.title }
+                NetworkResource.Success(titles)
             }
         } catch (e: Exception) {
+            Log.i("error", e.parseNetworkError())
             NetworkResource.Fail(e.parseNetworkError())
         }
     }
@@ -59,23 +62,27 @@ class PoetryRepositoryImpl @Inject constructor(
     override suspend fun getPoem(authorName: String, title: String): NetworkResource<Poem> {
         return try {
             withContext(Dispatchers.IO) {
-                val response: List<PoemResponse> = client.get("author,title/$authorName;$title").body()
-                response.firstOrNull()?.let {
+                val response: List<PoemResponse> =
+                    client.get("author,title/$authorName;$title").body()
+                val poemResponse = response.firstOrNull()
+                if (poemResponse != null) {
                     NetworkResource.Success(
                         Poem(
-                            it.title,
-                            it.author,
-                            it.lines,
-                            it.linecount
+                            poemResponse.title,
+                            poemResponse.author,
+                            poemResponse.lines,
+                            poemResponse.linecount
                         )
-                    ) ?: NetworkResource.Fail("Poem not found")
+                    )
+                } else {
+                    NetworkResource.Fail("Poem not found")
                 }
-
             }
         } catch (e: Exception) {
             NetworkResource.Fail(e.parseNetworkError())
         }
     }
+
 
     override suspend fun toggleFavourite(author: Author) {
         if (author.isFavourite) favouriteDao.delete(FavouriteAuthor(author.name))
