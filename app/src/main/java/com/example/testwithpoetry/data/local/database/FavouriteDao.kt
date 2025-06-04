@@ -5,7 +5,6 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface FavouriteDao {
@@ -17,9 +16,12 @@ interface FavouriteDao {
     suspend fun delete(author: FavouriteAuthor)
 
     @Query("SELECT * FROM favourite_authors ORDER BY added_at DESC")
-    fun getAllFavourites(): Flow<List<FavouriteAuthor>>
+    suspend fun getAllFavourites(): List<FavouriteAuthor>
 
     @Query("SELECT EXISTS(SELECT * FROM favourite_authors WHERE author_name = :name)")
     suspend fun isFavourite(name: String): Boolean
+
+    @Query("SELECT * FROM favourite_authors WHERE added_at > :timestamp")
+    suspend fun getFavouritesAfter(timestamp: Long): List<FavouriteAuthor>
 
 }

@@ -4,12 +4,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -19,146 +15,114 @@ import com.example.testwithpoetry.presentation.state.NetworkResource
 import com.example.testwithpoetry.presentation.viewmodel.PoetryViewModel
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AuthorDetailsScreen(
     navController: NavController,
     authorName: String,
     viewModel: PoetryViewModel = hiltViewModel(),
-
 ) {
-    val poemTitlesState = viewModel.poemTitles.observeAsState(initial = NetworkResource.Loading)
-    val selectedPoemState = viewModel.selectedPoem.observeAsState()
+    val poemTitlesState by viewModel.poemTitles.collectAsState()
+    val selectedPoemState by viewModel.selectedPoem.collectAsState()
     val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(authorName) {
         viewModel.loadPoemTitles(authorName)
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text(text = authorName) })
-        },
-        bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Filled.Star, contentDescription = "Poetry") },
-                    label = { Text("Poetry") },
-                    selected = true,
-                    onClick = {
-                        navController.navigate("authors") {
-                            popUpTo("profile") { inclusive = true }
-                        }
-                    }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Filled.Person, contentDescription = "Account") },
-                    label = { Text("Account") },
-                    selected = false,
-                    onClick = {navController.navigate("profile")}
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (poemTitlesState) {
+            is NetworkResource.Loading -> {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+            }
+
+            is NetworkResource.Fail -> {
+                Text(
+                    text = (poemTitlesState as NetworkResource.Fail).error ?: "Failed to load poem titles",
+                    modifier = Modifier.align(Alignment.Center)
                 )
             }
-        }
-    ) { padding ->
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            when (val titles = poemTitlesState.value) {
-                is NetworkResource.Loading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                }
-
-                is NetworkResource.Fail -> {
+            is NetworkResource.Success -> {
+                val titlesList = (poemTitlesState as NetworkResource.Success<List<String>>).data
+                if (titlesList.isEmpty()) {
                     Text(
-                        text = titles.error ?: "Failed to load poem titles",
+                        text = "No poems available.",
                         modifier = Modifier.align(Alignment.Center)
                     )
-                }
-
-                is NetworkResource.Success -> {
-                    val titlesList = titles.data
-                    if (titlesList.isEmpty()) {
-                        Text(
-                            text = "No poems available.",
-                            modifier = Modifier.align(Alignment.Center)
-                        )
-                    } else {
-                        LazyColumn(
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(titlesList) { title ->
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            coroutineScope.launch {
-                                                viewModel.loadPoem(authorName, title)
-                                            }
-                                        },
-                                    elevation = CardDefaults.cardElevation()
-                                ) {
-                                    Text(
-                                        text = title,
-                                        style = MaterialTheme.typography.titleMedium,
-                                        modifier = Modifier.padding(16.dp)
-                                    )
-                                }
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(titlesList) { title ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        coroutineScope.launch {
+                                            viewModel.loadPoem(authorName, title)
+                                        }
+                                    },
+                                elevation = CardDefaults.cardElevation()
+                            ) {
+                                Text(
+                                    text = title,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    modifier = Modifier.padding(16.dp)
+                                )
                             }
                         }
                     }
                 }
             }
+        }
 
-            when (val selectedPoem = selectedPoemState.value) {
-                is NetworkResource.Success -> {
-                    val poem = selectedPoem.data
-                    AlertDialog(
-                        onDismissRequest = { viewModel.clearSelectedPoem() },
-                        title = { Text(text = poem.title) },
-                        text = {
-                            Column {
-                                Text(
-                                    text = "by ${poem.content}",
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                poem.lines.forEach { line ->
-                                    Text(text = line)
-                                }
-                            }
-                        },
-                        confirmButton = {
-                            TextButton(onClick = { viewModel.clearSelectedPoem() }) {
-                                Text("Close")
-                            }
-                        }
-                    )
-                }
-
-                is NetworkResource.Fail -> {
-                    AlertDialog(
-                        onDismissRequest = { viewModel.clearSelectedPoem() },
-                        title = { Text("Error") },
-                        text = {
+        when (selectedPoemState) {
+            is NetworkResource.Success -> {
+                val poem = (selectedPoemState as NetworkResource.Success<com.example.testwithpoetry.data.local.model.Poem>).data
+                AlertDialog(
+                    onDismissRequest = { viewModel.clearSelectedPoem() },
+                    title = { Text(text = poem.title) },
+                    text = {
+                        Column {
                             Text(
-                                text = selectedPoem.error ?: "Unknown error",
-                                style = MaterialTheme.typography.bodyMedium
+                                text = "by ${poem.content}",
+                                style = MaterialTheme.typography.labelMedium
                             )
-                        },
-                        confirmButton = {
-                            TextButton(onClick = { viewModel.clearSelectedPoem() }) {
-                                Text("Close")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            poem.lines.forEach { line ->
+                                Text(text = line)
                             }
                         }
-                    )
-                }
-
-                else -> Unit
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { viewModel.clearSelectedPoem() }) {
+                            Text("Close")
+                        }
+                    }
+                )
             }
+
+            is NetworkResource.Fail -> {
+                AlertDialog(
+                    onDismissRequest = { viewModel.clearSelectedPoem() },
+                    title = { Text("Error") },
+                    text = {
+                        Text(
+                            text = (selectedPoemState as NetworkResource.Fail).error ?: "Unknown error",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { viewModel.clearSelectedPoem() }) {
+                            Text("Close")
+                        }
+                    }
+                )
+            }
+
+            else -> Unit
         }
     }
 }
+

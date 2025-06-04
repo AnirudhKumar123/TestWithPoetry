@@ -2,6 +2,7 @@ package com.example.testwithpoetry.di
 
 import android.content.Context
 import com.example.testwithpoetry.data.local.database.AppDatabase
+import com.example.testwithpoetry.data.local.database.AuthorDao
 import com.example.testwithpoetry.data.local.database.FavouriteDao
 import com.example.testwithpoetry.data.repository.PoetryRepositoryImpl
 import com.example.testwithpoetry.domain.repository.PoetryRepository
@@ -39,6 +40,11 @@ class AppModule {
     }
 
     @Provides
+    fun providesAuthorDao(db: AppDatabase): AuthorDao {
+        return db.authorDao()
+    }
+
+    @Provides
     @Singleton
     fun providesHttpClient(): HttpClient {
         return HttpClient(Android) {
@@ -63,8 +69,9 @@ class AppModule {
     @Singleton
     fun providePoetryRepository(
         client: HttpClient,
-        favouriteDao: FavouriteDao
+        favouriteDao: FavouriteDao,
+        authorDao: AuthorDao
     ): PoetryRepository {
-        return PoetryRepositoryImpl(client, favouriteDao)
+        return PoetryRepositoryImpl(client, favouriteDao, authorDao)
     }
 }

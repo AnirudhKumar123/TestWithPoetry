@@ -1,13 +1,14 @@
 package com.example.testwithpoetry.presentation.viewmodel
 
 import com.example.testwithpoetry.presentation.state.NetworkResource
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.testwithpoetry.data.local.model.Poem
 import com.example.testwithpoetry.domain.repository.PoetryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -16,26 +17,23 @@ class PoetryViewModel @Inject constructor(
     private val poetryRepository: PoetryRepository
 ) : ViewModel() {
 
-    private val _poemTitles = MutableLiveData<NetworkResource<List<String>>>()
-    val poemTitles: LiveData<NetworkResource<List<String>>> = _poemTitles
+    private val _poemTitles = MutableStateFlow<NetworkResource<List<String>>>(NetworkResource.Loading)
+    val poemTitles: StateFlow<NetworkResource<List<String>>> = _poemTitles.asStateFlow()
 
-    private val _selectedPoem = MutableLiveData<NetworkResource<Poem>?>()
-    val selectedPoem: LiveData<NetworkResource<Poem>?> = _selectedPoem
-
+    private val _selectedPoem = MutableStateFlow<NetworkResource<Poem>?>(null)
+    val selectedPoem: StateFlow<NetworkResource<Poem>?> = _selectedPoem.asStateFlow()
 
     fun loadPoemTitles(author: String) {
-
         viewModelScope.launch {
             val titles = poetryRepository.getTitlesByAuthor(author)
-            _poemTitles.postValue(titles)
+            _poemTitles.value = titles
         }
     }
 
     fun loadPoem(author: String, title: String) {
         viewModelScope.launch {
             val poem = poetryRepository.getPoem(author, title)
-            _selectedPoem.postValue(poem)
-
+            _selectedPoem.value = poem
         }
     }
 
